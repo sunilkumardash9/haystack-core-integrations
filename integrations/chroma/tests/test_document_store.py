@@ -14,8 +14,7 @@ from haystack.testing.document_store import (
     DeleteDocumentsTest,
     LegacyFilterDocumentsTest,
 )
-
-from chroma_haystack.document_store import ChromaDocumentStore
+from haystack_integrations.document_stores.chroma import ChromaDocumentStore
 
 
 class _TestEmbeddingFunction(EmbeddingFunction):
@@ -42,7 +41,9 @@ class TestDocumentStore(CountDocumentsTest, DeleteDocumentsTest, LegacyFilterDoc
         This is the most basic requirement for the child class: provide
         an instance of this document store so the base class can use it.
         """
-        with mock.patch("chroma_haystack.document_store.get_embedding_function") as get_func:
+        with mock.patch(
+            "haystack_integrations.document_stores.chroma.document_store.get_embedding_function"
+        ) as get_func:
             get_func.return_value = _TestEmbeddingFunction()
             return ChromaDocumentStore(embedding_function="test_function", collection_name=str(uuid.uuid1()))
 
@@ -111,6 +112,11 @@ class TestDocumentStore(CountDocumentsTest, DeleteDocumentsTest, LegacyFilterDoc
         assert ds._collection_name == collection_name
         assert ds._embedding_function == function_name
         assert ds._embedding_function_params == {"api_key": "1234567890"}
+
+    @pytest.mark.integration
+    def test_same_collection_name_reinitialization(self):
+        ChromaDocumentStore("test_name")
+        ChromaDocumentStore("test_name")
 
     @pytest.mark.skip(reason="Filter on array contents is not supported.")
     @pytest.mark.unit
