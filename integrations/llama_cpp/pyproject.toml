@@ -15,6 +15,7 @@ authors = [
     { name = "Ashwin Mathur", email = "" },
 ]
 classifiers = [
+  "License :: OSI Approved :: Apache Software License",
     "Development Status :: 4 - Beta",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.8",
@@ -50,6 +51,7 @@ git_describe_command = 'git describe --tags --match="integrations/llama_cpp-v[0-
 dependencies = [
     "coverage[toml]>=6.5",
     "pytest",
+    "haystack-pydoc-tools",
 ]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
@@ -62,7 +64,9 @@ cov = [
     "test-cov",
     "cov-report",
 ]
-
+docs = [
+  "pydoc-markdown pydoc/config.yml"
+]
 [[tool.hatch.envs.all.matrix]]
 python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
@@ -98,12 +102,12 @@ allow-direct-references = true
 known-first-party = ["src"]
 
 [tool.black]
-target-version = ["py37"]
+target-version = ["py38"]
 line-length = 120
 skip-string-normalization = true
 
 [tool.ruff]
-target-version = "py37"
+target-version = "py38"
 line-length = 120
 select = [
     "A",
@@ -155,21 +159,20 @@ ban-relative-imports = "parents"
 "tests/**" = ["T201"]
 
 [tool.coverage.run]
-source_pkgs = ["llama_cpp_haystack", "tests"]
+source = ["haystack_integrations"]
 branch = true
-parallel = true
+parallel = false
 
-
-[tool.coverage.paths]
-llama_cpp_haystack = ["src/haystack_integrations", "*/llama-cpp-haystack/src"]
-tests = ["tests", "*/llama-cpp-haystack/tests"]
 
 [tool.coverage.report]
+omit = ["*/tests/*", "*/__init__.py"]
+show_missing=true
 exclude_lines = [
-    "no cov",
-    "if __name__ == .__main__.:",
-    "if TYPE_CHECKING:",
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
 ]
+
 
 [tool.pytest.ini_options]
 markers = [

@@ -1,3 +1,4 @@
+from haystack.utils import Secret
 from haystack_integrations.document_stores.qdrant import QdrantDocumentStore
 
 
@@ -20,9 +21,11 @@ def test_to_dict():
             "path": None,
             "index": "test",
             "embedding_dim": 768,
+            "on_disk": False,
             "content_field": "content",
             "name_field": "name",
             "embedding_field": "embedding",
+            "use_sparse_embeddings": False,
             "similarity": "cosine",
             "return_embedding": False,
             "progress_bar": True,
@@ -41,6 +44,7 @@ def test_to_dict():
             "metadata": {},
             "write_batch_size": 100,
             "scroll_size": 10000,
+            "payload_fields_to_index": None,
         },
     }
 
@@ -52,12 +56,15 @@ def test_from_dict():
         {
             "type": "haystack_integrations.document_stores.qdrant.document_store.QdrantDocumentStore",
             "init_parameters": {
+                "api_key": {"env_vars": ["ENV_VAR"], "strict": False, "type": "env_var"},
                 "location": ":memory:",
                 "index": "test",
                 "embedding_dim": 768,
+                "on_disk": False,
                 "content_field": "content",
                 "name_field": "name",
                 "embedding_field": "embedding",
+                "use_sparse_embeddings": True,
                 "similarity": "cosine",
                 "return_embedding": False,
                 "progress_bar": True,
@@ -70,6 +77,7 @@ def test_from_dict():
                 "metadata": {},
                 "write_batch_size": 1000,
                 "scroll_size": 10000,
+                "payload_fields_to_index": None,
             },
         }
     )
@@ -80,6 +88,8 @@ def test_from_dict():
             document_store.content_field == "content",
             document_store.name_field == "name",
             document_store.embedding_field == "embedding",
+            document_store.use_sparse_embeddings is True,
+            document_store.on_disk is False,
             document_store.similarity == "cosine",
             document_store.return_embedding is False,
             document_store.progress_bar,
@@ -98,5 +108,7 @@ def test_from_dict():
             document_store.metadata == {},
             document_store.write_batch_size == 1000,
             document_store.scroll_size == 10000,
+            document_store.api_key == Secret.from_env_var("ENV_VAR", strict=False),
+            document_store.payload_fields_to_index is None,
         ]
     )

@@ -14,6 +14,7 @@ authors = [
   { name = "deepset GmbH", email = "info@deepset.ai" },
 ]
 classifiers = [
+  "License :: OSI Approved :: Apache Software License",
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3.8",
@@ -49,6 +50,7 @@ dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
   "pytest-xdist",
+  "haystack-pydoc-tools",
 ]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
@@ -60,6 +62,9 @@ cov-report = [
 cov = [
   "test-cov",
   "cov-report",
+]
+docs = [
+  "pydoc-markdown pydoc/config.yml"
 ]
 
 [[tool.hatch.envs.all.matrix]]
@@ -92,12 +97,12 @@ all = [
 allow-direct-references = true
 
 [tool.black]
-target-version = ["py37"]
+target-version = ["py38"]
 line-length = 120
 skip-string-normalization = true
 
 [tool.ruff]
-target-version = "py37"
+target-version = "py38"
 line-length = 120
 select = [
   "A",
@@ -152,15 +157,13 @@ ban-relative-imports = "parents"
 "tests/**/*" = ["PLR2004", "S101", "TID252"]
 
 [tool.coverage.run]
-source_pkgs = ["src", "tests"]
+source = ["haystack_integrations"]
 branch = true
 parallel = true
 
-[tool.coverage.paths]
-unstructured_fileconverter_haystack = ["src/haystack_integrations", "*/unstructured-fileconverter-haystack/src"]
-tests = ["tests", "*/unstructured-fileconverter-haystack/tests"]
-
 [tool.coverage.report]
+omit = ["*/tests/*", "*/__init__.py"]
+show_missing=true
 exclude_lines = [
   "no cov",
   "if __name__ == .__main__.:",
@@ -178,6 +181,7 @@ markers = [
 module = [
   "haystack.*",
   "haystack_integrations.*",
-  "pytest.*"
+  "pytest.*",
+  "unstructured.*",
 ]
 ignore_missing_imports = true

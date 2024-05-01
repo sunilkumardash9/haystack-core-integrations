@@ -2,11 +2,12 @@ import time
 
 import pytest
 from haystack.document_stores.types import DuplicatePolicy
+from pinecone.core.client.exceptions import NotFoundException
 
 from haystack_integrations.document_stores.pinecone import PineconeDocumentStore
 
 # This is the approximate time it takes for the documents to be available
-SLEEP_TIME = 25
+SLEEP_TIME = 30
 
 
 @pytest.fixture()
@@ -51,4 +52,7 @@ def document_store(request):
     store.delete_documents = delete_documents_and_wait
 
     yield store
-    store._index.delete(delete_all=True, namespace=namespace)
+    try:
+        store._index.delete(delete_all=True, namespace=namespace)
+    except NotFoundException:
+        pass

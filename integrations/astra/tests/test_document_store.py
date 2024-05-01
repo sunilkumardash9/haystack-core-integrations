@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
 from typing import List
+from unittest import mock
 
 import pytest
 from haystack import Document
@@ -13,10 +14,38 @@ from haystack.testing.document_store import DocumentStoreBaseTests
 from haystack_integrations.document_stores.astra import AstraDocumentStore
 
 
+def test_namespace_init():
+    with mock.patch("haystack_integrations.document_stores.astra.astra_client.AstraDB") as client:
+        AstraDocumentStore()
+        assert "namespace" in client.call_args.kwargs
+        assert client.call_args.kwargs["namespace"] is None
+
+        AstraDocumentStore(namespace="foo")
+        assert "namespace" in client.call_args.kwargs
+        assert client.call_args.kwargs["namespace"] == "foo"
+
+
+def test_to_dict():
+    with mock.patch("haystack_integrations.document_stores.astra.astra_client.AstraDB"):
+        ds = AstraDocumentStore()
+        result = ds.to_dict()
+        assert result["type"] == "haystack_integrations.document_stores.astra.document_store.AstraDocumentStore"
+        assert set(result["init_parameters"]) == {
+            "api_endpoint",
+            "token",
+            "collection_name",
+            "embedding_dimension",
+            "duplicates_policy",
+            "similarity",
+            "namespace",
+        }
+
+
+@pytest.mark.integration
 @pytest.mark.skipif(
-    os.environ.get("ASTRA_DB_APPLICATION_TOKEN", "") == "", reason="ASTRA_DB_APPLICATION_TOKEN is not set"
+    os.environ.get("ASTRA_DB_APPLICATION_TOKEN", "") == "", reason="ASTRA_DB_APPLICATION_TOKEN env var not set"
 )
-@pytest.mark.skipif(os.environ.get("ASTRA_DB_ID", "") == "", reason="ASTRA_DB_ID is not set")
+@pytest.mark.skipif(os.environ.get("ASTRA_DB_API_ENDPOINT", "") == "", reason="ASTRA_DB_API_ENDPOINT env var not set")
 class TestDocumentStore(DocumentStoreBaseTests):
     """
     Common test cases will be provided by `DocumentStoreBaseTests` but
@@ -24,9 +53,12 @@ class TestDocumentStore(DocumentStoreBaseTests):
     """
 
     @pytest.fixture
-    @pytest.mark.usefixtures
-    def document_store(self, document_store) -> AstraDocumentStore:
-        return document_store
+    def document_store(self) -> AstraDocumentStore:
+        return AstraDocumentStore(
+            collection_name="haystack_integration",
+            duplicates_policy=DuplicatePolicy.OVERWRITE,
+            embedding_dimension=768,
+        )
 
     @pytest.fixture(autouse=True)
     def run_before_and_after_tests(self, document_store: AstraDocumentStore):
@@ -69,6 +101,13 @@ class TestDocumentStore(DocumentStoreBaseTests):
         self.assert_documents_are_equal(document_store.filter_documents(), [doc2])
         assert document_store.write_documents(documents=[doc1], policy=DuplicatePolicy.OVERWRITE) == 1
         self.assert_documents_are_equal(document_store.filter_documents(), [doc1])
+
+    def test_write_documents_skip_duplicates(self, document_store: AstraDocumentStore):
+        docs = [
+            Document(id="1", content="test doc 1"),
+            Document(id="1", content="test doc 2"),
+        ]
+        assert document_store.write_documents(docs, policy=DuplicatePolicy.SKIP) == 1
 
     def test_delete_documents_non_existing_document(self, document_store: AstraDocumentStore):
         """

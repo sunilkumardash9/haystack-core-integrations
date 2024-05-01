@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Union
 
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerBase, PreTrainedTokenizerFast
 
 
 class DefaultPromptHandler:
@@ -10,8 +10,22 @@ class DefaultPromptHandler:
     are within the model_max_length.
     """
 
-    def __init__(self, model: str, model_max_length: int, max_length: int = 100):
-        self.tokenizer = AutoTokenizer.from_pretrained(model)
+    def __init__(self, tokenizer: Union[str, PreTrainedTokenizerBase], model_max_length: int, max_length: int = 100):
+        """
+        :param tokenizer: The tokenizer to be used to tokenize the prompt.
+        :param model_max_length: The maximum length of the prompt and answer tokens combined.
+        :param max_length: The maximum length of the answer tokens.
+        :raises ValueError: If the tokenizer is not a string or a `PreTrainedTokenizer` or `PreTrainedTokenizerFast`
+            instance.
+        """
+        if isinstance(tokenizer, str):
+            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer)
+        elif isinstance(tokenizer, (PreTrainedTokenizer, PreTrainedTokenizerFast)):
+            self.tokenizer = tokenizer
+        else:
+            msg = "model must be a string or a PreTrainedTokenizer instance"
+            raise ValueError(msg)
+
         self.tokenizer.model_max_length = model_max_length
         self.model_max_length = model_max_length
         self.max_length = max_length
@@ -22,7 +36,7 @@ class DefaultPromptHandler:
 
         :param prompt: the prompt to be sent to the model.
         :param kwargs: Additional keyword arguments passed to the handler.
-        :return: A dictionary containing the resized prompt and additional information.
+        :returns: A dictionary containing the resized prompt and additional information.
         """
         resized_prompt = prompt
         prompt_length = 0
@@ -63,7 +77,7 @@ class TokenStreamingHandler(ABC):
 
         :param token_received: The token received from the stream.
         :param kwargs: Additional keyword arguments passed to the handler.
-        :return: The token to be sent to the stream.
+        :returns: The token to be sent to the stream.
         """
         pass
 
@@ -75,7 +89,7 @@ class DefaultTokenStreamingHandler(TokenStreamingHandler):
 
         :param token_received: The token received from the stream.
         :param kwargs: Additional keyword arguments passed to the handler.
-        :return: The token to be sent to the stream.
+        :returns: The token to be sent to the stream.
         """
         print(token_received, flush=True, end="")  # noqa: T201
         return token_received
